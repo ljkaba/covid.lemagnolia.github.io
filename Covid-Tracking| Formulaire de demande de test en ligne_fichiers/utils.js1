@@ -1,0 +1,296 @@
+/* 
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+var empty;
+var mainNavigationLabel, secondNavigationLabel;
+var menuEditerFiche, menuEditerRevervation, menuRegistreFicheSanitaire, menuRgistreReservation, menuEtatFinancier;
+var menuGestionUtilisateur, menuGestionDashBoard, linkprofil;
+
+var SEARCH_MIN_TEXT = 3;
+
+var CYPHER_KEY = 'covid19@@hologram';
+
+var host = window.location.origin;
+var baseUrl = host + "/ecovid_api/apiCovid/";
+
+var headers = {
+    'cache-control': 'no-cache',
+    'accept': 'application/json',
+    'Access-Control-Allow-Origin': '*',
+    'Content-Type': 'application/json',
+    'id': 1340
+//    'token': 'd0tvSYzIpcqzyKK1zzTOYw.QsZsNP8MIRLrXiS2P9vWpDQu4HNxpVHm.O9z0BRKGatg.jewNn4fm-r-e0bJGV_aoow'
+};
+
+$(function () {
+
+//    if (checkSession()) {
+//        showSessionExpiredMessage();
+//        return;
+//    }
+
+    empty = '';
+
+    mainNavigationLabel = $('#mainNavigationLabel');
+    secondNavigationLabel = $('#secondNavigationLabel');
+
+    menuEditerFiche = $('#menuEditerFiche');
+    menuEditerRevervation = $('#menuEditerRevervation');
+    menuRegistreFicheSanitaire = $('#menuRegistreFicheSanitaire');
+    menuRgistreReservation = $('#menuRgistreReservation');
+    menuGestionUtilisateur = $('#menuGestionUtilisateur');
+    menuGestionDashBoard = $('#menuGestionDashBoard');
+    menuEtatFinancier = $('#menuEtatFinancier');
+    linkprofil = $('#linkprofil');
+
+    $('#linkLogout').on('click', function () {
+
+        $.blockUI({message: '<img src="assets/images/loading.gif" alt="" /> <h5 style="color:#286090" >Déconnexion en cours...</h5>'});
+        setTimeout(function () {
+
+            sessionStorage.setItem('userData', null);
+            $.unblockUI();
+            window.location = 'accueil';
+
+        }, 1000);
+
+    });
+
+    $('#sidebarCollapse').on('click', function () {
+        $('#sidebar').toggleClass('active');
+    });
+
+    alertify.defaults = {
+        autoReset: true,
+        basic: false,
+        closable: true,
+        closableByDimmer: true,
+        frameless: false,
+        maintainFocus: true,
+        maximizable: true,
+        modal: true,
+        movable: true,
+        moveBounded: false,
+        overflow: true,
+        padding: true,
+        pinnable: true,
+        pinned: true,
+        preventBodyShift: false,
+        resizable: true,
+        startMaximized: false,
+        transition: 'pulse',
+        notifier: {
+            delay: 5,
+            position: 'bottom-right',
+            closeButton: false
+        },
+        glossary: {
+            title: 'COVID-19',
+            ok: 'OK',
+            cancel: 'Annuler'
+        },
+        theme: {
+        }
+    };
+
+
+
+});
+
+function showEmptySearchMessage() {
+    alertify.alert('LEMAGNOLIA', 'Veuillez fournir un critère de recherche avec au moins ' + SEARCH_MIN_TEXT + ' caractères');
+}
+
+function showSessionExpiredMessage() {
+    alertify.alert('LEMAGNOLIA', 'Covid19 ! votre session a expiré');
+    setTimeout(function () {
+        logout();
+    }, 2000);
+}
+
+function logout() {
+    $.blockUI({message: '<img src="assets/images/loading.gif" alt="" /> <h5 style="color:#286090" >Déconnexion en cours...</h5>'});
+    setTimeout(function () {
+
+        sessionStorage.setItem('userData', null);
+        $.unblockUI();
+        window.location = 'accueil';
+
+    }, 1000);
+
+}
+
+function checkSession() {
+    var expired = false;
+    $.ajax({
+        type: 'POST',
+        url: 'covid19Servlet',
+        dataType: 'JSON',
+        async: false,
+        data: {
+            'operation': 'checkSession'
+        },
+        success: function (response)
+        {
+            if (response == '0' || response == '-1') {
+                expired = true;
+            }
+        },
+        complete: function () {
+        },
+        error: function () {
+            expired = false;
+        }
+    });
+    return expired;
+}
+
+
+function controlAccess(access) {
+
+    return true;
+
+    var hasAccess = false;
+
+    var accessData = JSON.parse(userData.accessUserList);
+
+    for (var i = 0; i < accessData.length; i++) {
+
+        if (accessData[i].droitId === access) {
+            hasAccess = true;
+        }
+    }
+
+    return hasAccess;
+}
+
+function showResponseError() {
+    alertify.alert('LEMAGNOLIA', 'Une erreur inattendue est survenue. Veuillez réesayer ou contacter l\'administrateur.');
+}
+
+var getUrlParameter = function getUrlParameter(sParam) {
+    var sPageURL = decodeURIComponent(window.location.search.substring(1)),
+            sURLVariables = sPageURL.split('&'),
+            sParameterName,
+            i;
+
+    for (i = 0; i < sURLVariables.length; i++) {
+        sParameterName = sURLVariables[i].split('=');
+
+        if (sParameterName[0] === sParam) {
+            return sParameterName[1] === undefined ? true : sParameterName[1];
+        }
+    }
+};
+
+function isValidEmailAddress(emailAddress) {
+    var pattern = new RegExp(/^(("[\w-\s]+")|([\w-]+(?:\.[\w-]+)*)|("[\w-\s]+")([\w-]+(?:\.[\w-]+)*))(@((?:[\w-]+\.)*\w[\w-]{0,66})\.([a-z]{2,6}(?:\.[a-z]{2})?)$)|(@\[?((25[0-5]\.|2[0-4][0-9]\.|1[0-9]{2}\.|[0-9]{1,2}\.))((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[0-9]{1,2})\.){2}(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[0-9]{1,2})\]?$)/i);
+    return pattern.test(emailAddress);
+}
+
+function formatNumber(number, curr) {
+
+    var value = new Intl.NumberFormat('EUR', {
+        style: 'currency',
+        currency: curr
+    }).format(number);
+
+    if (curr == 'USD') {
+
+        value = value.replace('$US', 'USD');
+
+    }
+
+    return value;
+}
+
+function isUndefined(data) {
+
+    if (data == null
+            || data == undefined
+            || data == 'null') {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+function getsearchbarText(size, text) {
+
+    if (size > 1) {
+        return 'Plusieurs'.toUpperCase();
+    }
+
+    if (text == "*") {
+        return "Tout".toUpperCase();
+    }
+
+    if (text.length > 30) {
+        return  text.substring(0, 30) + ' ...'.toUpperCase();
+    } else {
+        return  text.toUpperCase();
+    }
+
+}
+
+function setDocumentContent(content) {
+    sessionStorage.setItem('documentContent', content);
+}
+
+function getDocumentContent() {
+    return sessionStorage.getItem('documentContent');
+}
+
+function setFicheContent(content) {
+    sessionStorage.setItem('ficheContent', content);
+}
+
+function getFicheContent() {
+    return sessionStorage.getItem('ficheContent');
+}
+
+function setFicheReference(content) {
+    sessionStorage.setItem('reference', content);
+}
+
+function getFicheReference() {
+    return sessionStorage.getItem('reference');
+}
+
+function checkMenu() {
+
+    userData = JSON.parse(sessionStorage.getItem('userData'));
+    var etatUser = userData.etat;
+
+    if (etatUser === 2) { //internaute
+        menuEditerRevervation.attr('style', 'display:block');
+        menuRgistreReservation.attr('style', 'display:block');
+        menuRegistreFicheSanitaire.attr('style', 'display:block');
+    } else if (etatUser === 1) { //administrateur
+        menuEditerFiche.attr('style', 'display:block');
+        menuRegistreFicheSanitaire.attr('style', 'display:block');
+        menuGestionUtilisateur.attr('style', 'display:block');
+        menuGestionDashBoard.attr('style', 'display:block');
+        menuEtatFinancier.attr('style', 'display:block');
+    } else if (etatUser === 3) {//laborantin
+        menuRegistreFicheSanitaire.attr('style', 'display:block');
+    } else if (etatUser === 4) { //encodeur
+        menuEditerFiche.attr('style', 'display:block');
+        menuRegistreFicheSanitaire.attr('style', 'display:block');
+    } else if (etatUser === 5) { //Responsable
+        menuGestionDashBoard.attr('style', 'display:block');
+        menuEtatFinancier.attr('style', 'display:block');
+        menuRegistreFicheSanitaire.attr('style', 'display:block');
+        menuGestionUtilisateur.attr('style', 'display:block');
+    }
+}
+
+function textToBase64BarcodeUtils(text) {
+    var canvas = document.createElement("canvas");
+    JsBarcode(canvas, text, {format: "CODE39"});
+    var imageb64 = canvas.toDataURL("image/png");
+    printJS({printable: imageb64, type: 'image', base64: true});
+}
+

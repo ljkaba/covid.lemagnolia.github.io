@@ -1,0 +1,112 @@
+/* 
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+var idDivtableFiche, input_search;
+$(function () {
+    
+    idDivtableFiche = $('#idDivtableFiche');
+    input_search = $('#input_search');
+
+    var url_string = window.location.href;
+    userData = JSON.parse(sessionStorage.getItem('userData'));
+
+    var url = new URL(url_string);
+    var code = url.searchParams.get("code");
+    var decod = window.atob(code);
+    if(decod !== empty){
+        input_search.val(decod);
+    }
+    //alert(decod);
+    loadFicheSanitaires(decod);
+
+});
+
+function loadFicheSanitaires(code) {
+
+    $.ajax({
+        type: 'POST',
+        url: 'covid19Servlet',
+        dataType: 'JSON',
+        crossDomain: false,
+        data: {
+            'typeSearch': '1',
+            'valueSearch': code,
+            'inputDateDebut': "",
+            'inputDateFin': "",
+            'advanced': 0,
+            'userId': '0',
+            'etat': '1',
+            'operation': 'loadFiches'
+        },
+        beforeSend: function () {
+
+            $.blockUI({message: '<img src="assets/images/loading.gif" alt="" /> <h5>Chargement des fiche en cours ...</h5>'});
+
+
+        },
+        success: function (response)
+        {
+
+            setTimeout(function () {
+
+
+                $.unblockUI();
+
+
+                if (response == '-1') {
+                    idDivtableFiche.html(empty);
+                    showResponseError();
+                    return;
+
+                } else if (response == '0') {
+
+                    idDivtableFiche.html(empty);
+
+                    if (isAdanced === '0') {
+
+                        switch (selectTypeSearchID) {
+                            case '1':
+                                alertify.alert('Aucune fiche sanitaire ne correspond au numéro fourni');
+                                break;
+                            case '2':
+                                alertify.alert('Aucune fiche danitaire ne correspond au nom ou prénom du passager fourni');
+                                break;
+                        }
+
+                    } else {
+                        idDivtableFiche.html(empty);
+                        alertify.alert('Aucune fiche sanitaire ne correspond à la période indiquer');
+                    }
+
+                } else {
+
+                    ficheList = JSON.parse(JSON.stringify(response));
+                    idDivtableFiche.html(response[0].table);
+
+                    if (isAdanced === '1') {
+                        modalRechercheAvancee.modal('hide');
+                    }
+
+                }
+            }
+            , 1);
+        },
+        complete: function () {
+        },
+        error: function () {
+
+            if (isAdanced === '0') {
+                $.unblockUI();
+            } else {
+                modalRechercheAvancee.unblock();
+            }
+
+            showResponseError();
+            idDivtableFiche.html(empty);
+        }
+    });
+}
+
+
